@@ -2,16 +2,15 @@
 
 stdenv.mkDerivation rec {
   pname = "ch9344";
-  version = "2.0";
+  version = "2.1";
 
   src = fetchzip {
     name = "CH9344SER_LINUX.zip";
     url = "https://www.wch.cn/downloads/file/386.html#CH9344SER_LINUX.zip";
-    hash = "sha256-YKNMYpap7CjhgTIpd/M9+nB11NtpwGYT/P14J6q3XZg=";
+    hash = "sha256-ZZ/8s26o7wRwHy6c0m1vZ/DtRW5od+NgiU6aXZBVfc4=";
   };
 
   patches = [
-    ./fix-incompatible-pointer-types.patch
   ];
 
   sourceRoot = "${src.name}/driver";
