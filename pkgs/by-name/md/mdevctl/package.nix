@@ -1,5 +1,7 @@
 {
   lib,
+  bash,
+  util-linux,
   rustPlatform,
   fetchCrate,
   docutils,
@@ -32,6 +34,10 @@ rustPlatform.buildRustPackage rec {
     ln -s mdevctl $out/bin/lsmdev
 
     install -Dm444 60-mdevctl.rules -t $out/lib/udev/rules.d
+    substituteInPlace $out/lib/udev/rules.d/60-mdevctl.rules \
+      --replace {,${bash}}/bin/sh \
+      --replace {,${util-linux}/bin/}logger \
+      --replace /usr/sbin/mdevctl $out/bin/mdevctl
 
     installManPage $releaseDir/build/mdevctl-*/out/mdevctl.8
     ln -s mdevctl.8 $out/share/man/man8/lsmdev.8
