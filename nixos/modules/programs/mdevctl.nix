@@ -14,7 +14,8 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    environment.systemPackages = with pkgs; [ mdevctl ];
+    services.udev.packages = [ pkgs.mdevctl ];
+    environment.systemPackages = [ pkgs.mdevctl ];
 
     environment.etc."mdevctl.d/.keep".text = "";
     environment.etc."mdevctl/scripts.d/notifiers/.keep".text = "";
