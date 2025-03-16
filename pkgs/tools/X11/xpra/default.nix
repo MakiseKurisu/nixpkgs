@@ -278,5 +278,6 @@ buildPythonApplication rec {
       numinit
       mvnetbiz
     ];
+    mainProgram = "xpra";
   };
 }
