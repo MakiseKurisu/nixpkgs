@@ -294,5 +294,6 @@ buildPythonApplication rec {
       mvnetbiz
       lucasew
     ];
+    mainProgram = "xpra";
   };
 }
