@@ -5,9 +5,11 @@
   runCommand,
   writeText,
   wrapGAppsHook3,
+  makeBinaryWrapper,
   withNvenc ? false,
   atk,
   cairo,
+  coreutils,
   cudatoolkit,
   cudaPackages,
   ffmpeg,
@@ -33,6 +35,7 @@
   python3,
   stdenv,
   util-linux,
+  weston,
   which,
   x264,
   x265,
@@ -122,6 +125,7 @@ buildPythonApplication rec {
     wrapGAppsHook3
     pandoc
     udevCheckHook
+    makeBinaryWrapper
   ]
   ++ lib.optional withNvenc cudatoolkit;
 
@@ -242,9 +246,11 @@ buildPythonApplication rec {
       --prefix LD_LIBRARY_PATH : ${libfakeXinerama}/lib
       --prefix PATH : ${
         lib.makeBinPath [
+          coreutils
           getopt
           xorgserver
           xauth
+          weston
           which
           util-linux
           pulseaudioFull
@@ -256,6 +262,11 @@ buildPythonApplication rec {
   ''
   + ''
     )
+
+    wrapPythonProgramsIn "$out/libexec/xpra" "$out $propagatedBuildInputs"
+    for i in xpra_udev_product_version xpra_weston_xvfb; do
+      wrapProgram "$out/libexec/xpra/$i" "''${makeWrapperArgs[@]}"
+    done
   '';
 
   postInstall = ''
