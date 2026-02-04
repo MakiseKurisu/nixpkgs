@@ -7,6 +7,9 @@
   pkgsCross,
   buildPackages,
 
+  # Dependencies for packaging U-Boot for Marvell Armada 37x0 products
+  ubootESPRESSObin,
+
   # Warning: this blob (hdcp.bin) runs on the main CPU (not the GPU) at
   # privilege level EL3, which is above both the kernel and the
   # hypervisor.
@@ -216,5 +219,99 @@ in
     platform = "gxbb";
     extraMeta.platforms = [ "aarch64-linux" ];
     filesToInstall = [ "build/${platform}/release/bl31.bin" ];
+  };
+
+  # Armanda 37x0 products:
+  #   1. needs specific ATF for each of their CPU speed / Memory combination
+  #   2. also do final U-Boot packaging in ATF repo
+  # This makes the build output not generic per SoC, but tightly coupled with
+  # final hardware.
+  # As such there is not much point to list them as ATF package, but more like
+  # the final output of the U-Boot package.
+  ubootESPRESSObin-full = {
+    CPU_1000_DDR_800_DDR_TOPOLOGY_2 = buildArmTrustedFirmware rec {
+      pname = "${ubootESPRESSObin.pname}-CPU_1000_DDR_800_DDR_TOPOLOGY_2";
+      version = ubootESPRESSObin.version;
+
+      mv-ddr-marvell = fetchFromGitHub {
+        owner = "MarvellEmbeddedProcessors";
+        repo = "mv-ddr-marvell";
+        rev = "7bcb9dc7ea7fa233bf96bd0350a4ec7c205e342e";
+        hash = "sha256-M0XZ7+L0NDUmu4zu6o01lO41cJMWQRHCf9UF7eY4AjA=";
+        leaveDotGit = true; # ATF actually wants git repo
+      };
+      A3700-utils-marvell = fetchFromGitHub {
+        owner = "MakiseKurisu";
+        repo = "A3700-utils-marvell";
+        rev = "7a1278de0f96630790441550cc8b8aea0806ad03";
+        hash = "sha256-ql4CfYdJ/qbibm+smS0aZZKZU96chCSzkr4/7we817g=";
+        leaveDotGit = true; # ATF actually wants git repo
+      };
+
+      preBuild = ''
+        # Workaround "dubious ownership" git error caused by Nix store being owned by root
+        cp -r ${A3700-utils-marvell} "$NIX_BUILD_TOP/A3700-utils-marvell"
+        cp -r ${mv-ddr-marvell} "$NIX_BUILD_TOP/mv-ddr-marvell"
+        chmod -R +w "$NIX_BUILD_TOP/A3700-utils-marvell" "$NIX_BUILD_TOP/mv-ddr-marvell"
+        patchShebangs "$NIX_BUILD_TOP/A3700-utils-marvell/script/"*
+
+        makeFlagsArray+=(
+          "WTP=$NIX_BUILD_TOP/A3700-utils-marvell"
+          "MV_DDR_PATH=$NIX_BUILD_TOP/mv-ddr-marvell"
+        )
+      '';
+
+      nativeBuildInputs = [
+        buildPackages.gitMinimal
+        buildPackages.perl
+        buildPackages.which
+        openssl
+        pkgsCross.arm-embedded.stdenv.cc
+      ];
+
+      extraMakeFlags = [
+        "CROSS_CM3=${pkgsCross.arm-embedded.stdenv.cc.targetPrefix}"
+        "USE_COHERENT_MEM=0"
+        # You can find valid CLOCKSPRESET and DDR_TOPOLOGY value here:
+        # https://trustedfirmware-a.readthedocs.io/en/latest/plat/marvell/armada/build.html
+        "CLOCKSPRESET=CPU_1000_DDR_800"
+        "DDR_TOPOLOGY=2"
+        "CRYPTOPP_LIBDIR=${buildPackages.cryptopp}/lib"
+        "CRYPTOPP_INCDIR=${buildPackages.cryptopp.dev}/include/cryptopp"
+        "BL33=${ubootESPRESSObin}/u-boot.bin"
+        "WTMI_IMG=${buildPackages.wtmi_app}/wtmi_app.bin"
+        "FIP_ALIGN=0x100"
+      ];
+
+      buildFlags = [
+        "mrvl_flash"
+        "mrvl_uart"
+      ];
+
+      # Regular buildArmTrustedFirmware section
+
+      platform = "a3700";
+      extraMeta = {
+        platforms = [ "aarch64-linux" ];
+        longDescription = ''
+          This Trusted Firmware-A package also include packaged U-Boot suitable
+          for flashing.
+
+          Please refer to https://wiki.espressobin.net/tiki-index.php?page=Update+the+Bootloader
+          for how to flash flash-image.bin to your device.
+
+          The current configuration is for 1GHz CPU and 800MHz DDR3 2CS 1GB.
+        '';
+      };
+      filesToInstall = [
+        "build/${platform}/release/bl1.bin"
+        "build/${platform}/release/bl2.bin"
+        "build/${platform}/release/bl31.bin"
+        "build/${platform}/release/fip.bin"
+        "build/${platform}/release/boot-image.bin"
+        "build/${platform}/release/flash-image.bin"
+        "build/${platform}/release/uart-images.tgz.bin"
+      ];
+    };
   };
 }

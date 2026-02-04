@@ -8921,6 +8921,7 @@ with pkgs;
     armTrustedFirmwareRK3568
     armTrustedFirmwareRK3588
     armTrustedFirmwareS905
+    ubootESPRESSObin-full
     ;
 
   inherit (libapparmor.passthru) apparmorRulesFromClosure;
