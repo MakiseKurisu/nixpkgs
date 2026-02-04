@@ -9359,6 +9359,7 @@ with pkgs;
     ubootClearfog
     ubootCM3588NAS
     ubootCubieboard2
+    ubootESPRESSObin
     ubootGuruplug
     ubootJetsonTK1
     ubootLibreTechCC

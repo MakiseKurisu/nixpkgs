@@ -291,6 +291,14 @@ in
     filesToInstall = [ "u-boot-sunxi-with-spl.bin" ];
   };
 
+  ubootESPRESSObin = buildUBoot {
+    defconfig = "mvebu_espressobin-88f3720_defconfig";
+    extraMeta.platforms = [ "aarch64-linux" ];
+    filesToInstall = [
+      "u-boot.bin"
+    ];
+  };
+
   ubootGuruplug = buildUBoot {
     defconfig = "guruplug_defconfig";
     extraMeta.platforms = [ "armv5tel-linux" ];
